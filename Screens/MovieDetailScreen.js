@@ -9,7 +9,9 @@ import {
   Alert,
   Modal,
   Pressable,
+  ImageBackground,
 } from "react-native";
+import { LinearGradient } from "expo-linear-gradient";
 import YoutubeIframe from "react-native-youtube-iframe";
 import YoutubePlayer from "react-native-youtube-iframe";
 import IconLabel from "../Component/UI/IconLabel";
@@ -18,23 +20,35 @@ import Reviews from "../Component/MovieDetail/Reviews";
 import Cast from "../Component/MovieDetail/Cast";
 import { createMaterialTopTabNavigator } from "@react-navigation/material-top-tabs";
 import { GlobalColor } from "../Color/colors";
-import { useEffect, useLayoutEffect, useState } from "react";
+import { useContext, useEffect, useLayoutEffect, useState } from "react";
 import IconButton from "../Component/UI/IconButton";
 import {
   addMovieWatchList,
   addRatingMovie,
   deleteMovieWatchList,
+  getTrailerOfMovie,
 } from "../Services/httpService";
 import Slider from "@react-native-community/slider";
+import BookSeatScreen from "./BookSeatScreen";
+import {
+  addMovieToWatchList,
+  deleteMovieInWatchList,
+  fetchWatchList,
+} from "../util/firebase";
+import { AuthContext } from "../Store/authContext";
 const Tab = createMaterialTopTabNavigator();
 function MovieDetailScreen({ navigation, route }) {
-  const [movieDetail, setMovieDetail] = useState();
+  console.log("MovieDetailScreen");
+  const [movieDetail, setMovieDetail] = useState({});
   const [youtubeKey, setYoutubeKey] = useState("");
   const [reviews, setReviews] = useState([]);
   const [casts, setCasts] = useState([]);
   const [isLike, setIsLike] = useState(false);
   const [modalVisible, setModalVisible] = useState(false);
+  const [bookModalVisible, setBookModalVisible] = useState(false);
   const [ratingValue, setRatingValue] = useState(0.5);
+
+  const authCtx = useContext(AuthContext);
   async function onLikeHandler() {
     setIsLike(!isLike);
     // await addMovieWatchList(movieDetail.id);
@@ -42,12 +56,15 @@ function MovieDetailScreen({ navigation, route }) {
     try {
       if (!isLike) {
         console.log("like");
+
         await addMovieWatchList(route.params.movieDetail.id);
+        addMovieToWatchList(authCtx.uid, route.params.movieDetail.id);
         setIsLike(true);
       } else {
         try {
           console.log("unlike");
           await deleteMovieWatchList(route.params.movieDetail.id);
+          deleteMovieInWatchList(authCtx.uid, route.params.movieDetail.id);
           if (navigation.getParent("watchLists")) {
             navigation.goBack();
           }
@@ -64,39 +81,55 @@ function MovieDetailScreen({ navigation, route }) {
   }
 
   useLayoutEffect(() => {
-    if (route !== null) {
-      if (route.params.movieDetail) {
-        setMovieDetail(route.params.movieDetail);
+    function isInWatchList(movieId, watchList) {
+      if (watchList.length > 0) {
+        return watchList.find((movie) => {
+          return movie.id === movieId;
+        })
+          ? true
+          : false;
       }
-      if (route.params.reviews) {
-        setReviews(route.params.reviews);
+      console.log(0);
+
+      return false;
+    }
+    async function getWatchList() {
+      console.log("Get Watch List");
+      try {
+        // const watchLists = await getMovieWatchList();
+        await fetchWatchList(authCtx.uid).then((response) => {
+          setIsLike(isInWatchList(route?.params?.movieDetail?.id, response));
+        });
+      } catch (error) {}
+    }
+    getWatchList();
+  }, []);
+
+  useLayoutEffect(() => {
+    try {
+      if (route !== null) {
+        if (route?.params?.movieDetail) {
+          setMovieDetail(route.params.movieDetail);
+          console.log(route.params.movieDetail.genres[0].name);
+        }
+        if (route?.params?.reviews) {
+          setReviews(route.params.reviews);
+        }
+        if (route?.params?.casts) {
+          setCasts(route.params.casts);
+        }
+        if (route?.params?.youtubeKey) {
+          setYoutubeKey(route.params.youtubeKey);
+        }
+        // if (route.params.isWatchList != null) {
+        //   if (!route.params.isWatchList) {
+        //   } else {
+        //     setIsLike(route.params.isWatchList);
+        //   }
+        // }
       }
-      if (route.params.casts) {
-        setCasts(route.params.casts);
-      }
-      if (route.params.youtubeKey) {
-        setYoutubeKey(route.params.youtubeKey);
-      }
-      if (route.params.isWatchList) {
-        setIsLike(route.params.isWatchList);
-      }
-      console.log(route.params.isWatchList);
-      // navigation.setOptions({
-      //   headerRight: ({ tintColor }) => (
-      //     <IconButton
-      //       color={!isLike ? tintColor : "yellow"}
-      //       icon="bookmark"
-      //       size={24}
-      //       onPress={onLikeHandler}
-      //     />
-      //     // <Ionicons
-      //     //   name="bookmark"
-      //     //   size={24}
-      //     //   // color={!isLike ? tintColor : "yellow"}
-      //     //   onPress={onLikeHandler}
-      //     // />
-      //   ),
-      // });
+    } catch (error) {
+      console.log(error);
     }
   }, []);
   useEffect(() => {
@@ -148,6 +181,13 @@ function MovieDetailScreen({ navigation, route }) {
     await addRatingMovie(route.params.movieDetail.id, ratingValue);
     Alert.alert("Success!");
   }
+
+  function hideTicketBookingModel() {
+    setBookModalVisible(false);
+    Alert.alert("Success!", "Please check information in your ticket boxes");
+  }
+
+  function bookingTicketHandler() {}
   return (
     <View style={styles.root}>
       <Modal
@@ -194,6 +234,57 @@ function MovieDetailScreen({ navigation, route }) {
           </View>
         </View>
       </Modal>
+
+      <Modal
+        animationType="slide"
+        transparent={true}
+        visible={bookModalVisible}
+        onRequestClose={() => {
+          Alert.alert("Modal has been closed.");
+          setBookModalVisible(!bookModalVisible);
+        }}
+        style={styles.modal}
+      >
+        <View style={styles.bookCenteredView}>
+          <View style={styles.bookModalView}>
+            <View style={styles.background}>
+              <ImageBackground
+                source={{
+                  uri:
+                    "https://image.tmdb.org/t/p/w500" +
+                    route.params.movieDetail.poster_path,
+                }}
+                imageStyle={{ borderRadius: 20 }}
+                style={styles.imageBG}
+              >
+                <LinearGradient
+                  colors={["#0000001a", "#000000"]}
+                  style={styles.linearGradient}
+                >
+                  <View style={styles.close1}>
+                    <Ionicons
+                      name="close-outline"
+                      size={40}
+                      color="white"
+                      style={styles.icon}
+                      onPress={() => setBookModalVisible(false)}
+                    />
+                  </View>
+                </LinearGradient>
+              </ImageBackground>
+            </View>
+            {/* <ScrollView style={styles.action}></ScrollView> */}
+            <View style={styles.action}>
+              <View style={styles.bookSeatScreen}>
+                <BookSeatScreen
+                  movieDetail={route.params.movieDetail}
+                  hideModal={hideTicketBookingModel}
+                />
+              </View>
+            </View>
+          </View>
+        </View>
+      </Modal>
       <View
         style={{
           flex: 1,
@@ -210,7 +301,6 @@ function MovieDetailScreen({ navigation, route }) {
           />
         </View>
         <View style={styles.titleContainer}>
-          <Text style={styles.title}>{movieDetail?.title}</Text>
           <View style={styles.iconLabel}>
             <Pressable onPress={() => setModalVisible(true)}>
               <IconLabel
@@ -218,6 +308,18 @@ function MovieDetailScreen({ navigation, route }) {
                 size={20}
                 color={"orange"}
                 title={"9.2"}
+              />
+            </Pressable>
+          </View>
+          <Text style={styles.title}>{movieDetail?.title}</Text>
+
+          <View style={styles.iconLabel}>
+            <Pressable onPress={() => setBookModalVisible(true)}>
+              <IconLabel
+                icon="ios-basket-outline"
+                size={20}
+                color={"yellow"}
+                title={"Ticket"}
               />
             </Pressable>
           </View>
@@ -241,7 +343,11 @@ function MovieDetailScreen({ navigation, route }) {
             icon="md-pricetags-outline"
             size={20}
             color={"#92929D"}
-            title={movieDetail?.genres[0].name}
+            title={
+              Object.hasOwn(route.params.movieDetail, "genres")
+                ? route.params.movieDetail.genres[0].name
+                : route.params.movieDetail.categories[0]?.name
+            }
           />
         </View>
         <View style={styles.navigateContainer}>
@@ -301,10 +407,12 @@ const styles = StyleSheet.create({
   },
   titleContainer: {
     paddingTop: 10,
+    flexDirection: "row",
     alignItems: "center",
-    justifyContent: "center",
+    justifyContent: "space-evenly",
   },
   title: {
+    width: "50%",
     color: "white",
     fontSize: 20.5,
     marginLeft: 5,
@@ -339,9 +447,14 @@ const styles = StyleSheet.create({
     flex: 1,
     justifyContent: "flex-end",
   },
-  modalView: {
-    height: "30%",
-    backgroundColor: "white",
+  bookCenteredView: {
+    flex: 1,
+    justifyContent: "flex-end",
+    borderRadius: 20,
+  },
+  bookModalView: {
+    height: "95%",
+    backgroundColor: GlobalColor.background,
     borderRadius: 20,
     shadowColor: "#000",
     shadowOffset: {
@@ -356,10 +469,26 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   close: {
+    padding: 5,
     alignItems: "flex-end",
+  },
+  close1: {
+    marginEnd: 10,
+    marginTop: 10,
+    width: 46,
+    height: 46,
+    alignSelf: "flex-end",
+    alignItems: "center",
+    justifyContent: "center",
+    borderRadius: 23,
+    backgroundColor: "red",
+  },
+  icon: {
+    borderRadius: 10,
   },
   action: {
     alignItems: "center",
+
     // marginTop: -25,
   },
   button: {
@@ -387,5 +516,32 @@ const styles = StyleSheet.create({
   textStyle: {
     color: "white",
     fontWeight: "bold",
+  },
+  modalView: {
+    backgroundColor: "white",
+    borderRadius: 20,
+    height: "30%",
+  },
+  imageBG: {
+    width: "100%",
+    aspectRatio: 3072 / 1727,
+    borderRadius: 20,
+  },
+  linearGradient: {
+    height: "100%",
+  },
+  bookSeatScreen: {
+    paddingVertical: 20,
+  },
+  button1: {
+    backgroundColor: "#ef1026",
+    height: 40,
+    width: 150,
+    borderRadius: 10,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  background: {
+    borderRadius: 20,
   },
 });

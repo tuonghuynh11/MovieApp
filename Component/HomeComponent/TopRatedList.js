@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useContext, useEffect, useState } from "react";
 import { FlatList, Text, StyleSheet } from "react-native";
 import {
   getCastOfMovie,
@@ -11,12 +11,15 @@ import {
 } from "../../Services/httpService";
 import MovieItem from "../MovieDetail/MovieItem";
 import { useNavigation } from "@react-navigation/native";
+import { AuthContext } from "../../Store/authContext";
+import { fetchWatchList } from "../../util/firebase";
 
 function TopRatedList() {
   const navigation = useNavigation();
   const [topRatedMovies, setTopRatedMovies] = useState([]);
 
   const [watchList, setWatchList] = useState([]);
+  const authCtx = useContext(AuthContext);
 
   // useEffect(() => {
   //   async function getWatchList() {
@@ -36,13 +39,14 @@ function TopRatedList() {
 
       // Do something manually
       // ...
-      async function getWatchList() {
-        try {
-          const watchLists = await getMovieWatchList();
-          setWatchList(watchLists);
-        } catch (error) {}
-      }
-      getWatchList();
+      // async function getWatchList() {
+      //   try {
+      //     // const watchLists = await getMovieWatchList();
+      //     const watchLists = await fetchWatchList(authCtx.uid);
+      //     setWatchList(watchLists);
+      //   } catch (error) {}
+      // }
+      // getWatchList();
     });
   }, [navigation]);
   useEffect(() => {
@@ -53,15 +57,15 @@ function TopRatedList() {
     fetchTopRatedMovies();
   }, []);
 
-  function isInWatchList(movieId) {
-    if (watchList.length > 0) {
-      return watchList.find((movie) => {
-        return movie.id === movieId;
-      })
-        ? true
-        : false;
-    }
-  }
+  // function isInWatchList(movieId) {
+  //   if (watchList.length > 0) {
+  //     return watchList.find((movie) => {
+  //       return movie.id === movieId;
+  //     })
+  //       ? true
+  //       : false;
+  //   }
+  // }
 
   async function movieHandler(movieID) {
     console.log("click");
@@ -103,7 +107,7 @@ function TopRatedList() {
         reviews: reviews,
         casts: casts,
         youtubeKey: trailerId,
-        isWatchList: isInWatchList(movieID),
+        isWatchList: false,
       });
     } catch (error) {
       console.log(error);

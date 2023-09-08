@@ -10,73 +10,29 @@ import { memo, useEffect, useLayoutEffect, useState } from "react";
 import Loading from "../UI/Loading";
 
 function MovieSearchItem({ movie, onPressed }) {
-  const [movieDetail, setMovieDetail] = useState({});
   const [categories, setCategories] = useState("");
-  const [youtubeKey, setYoutubeKey] = useState("");
-  const [reviews, setReviews] = useState([]);
-  const [casts, setCasts] = useState([]);
+
   const [isLoading, setIsLoading] = useState(false);
 
   function onPressHandler() {
-    onPressed(movieDetail, reviews, casts, youtubeKey);
+    onPressed(movie);
   }
   useEffect(() => {
-    async function getData() {
-      if (movie !== null) {
-        setIsLoading(true);
-        const mv = await getMovieDetailById(movie.id);
-        if (mv !== null) {
-          setMovieDetail(mv);
-          let category = "";
-          // movie.runtime= mv.runtime;
-          // movie.categories=[];
-          mv.genres.forEach((item, index) => {
-            // movie.categories.push(item.name);
-            if (index != this.length - 1) {
-              category += item.name + ", ";
-            }
-            category += item.name;
-          });
-          if (category.length > 20) {
-            category = category.substring(0, 20);
-            category += "...";
-          }
-          setCategories(category);
-        }
+    let category = "";
+    // movie.runtime= mv.runtime;
+    // movie.categories=[];
+    movie.categories.forEach((item, index) => {
+      // movie.categories.push(item.name);
+      if (index != this.length - 1) {
+        category += item.name + ", ";
       }
-      setIsLoading(false);
+      category += item.name;
+    });
+    if (category.length > 20) {
+      category = category.substring(0, 20);
+      category += "...";
     }
-    getData();
-  }, []);
-
-  useEffect(() => {
-    async function getDatas() {
-      await getReviewsOfMovie(movie.id)
-        .then((response) => {
-          setReviews(response);
-        })
-        .catch((error) => {
-          //console.log(error);
-          return null;
-        });
-      await getCastOfMovie(movie.id)
-        .then((response) => {
-          setCasts(response);
-        })
-        .catch((error) => {
-          //console.log(error);
-          return null;
-        });
-      await getTrailerOfMovie(movie.id)
-        .then((response) => {
-          setYoutubeKey(response);
-        })
-        .catch((error) => {
-          //console.log(error);
-          return null;
-        });
-    }
-    getDatas();
+    setCategories(category);
   }, []);
 
   return (
@@ -129,7 +85,7 @@ function MovieSearchItem({ movie, onPressed }) {
                 icon="time-outline"
                 size={20}
                 color={"white"}
-                title={movieDetail.runtime + " minutes"}
+                title={movie.runtime + " minutes"}
               />
             </View>
           </View>

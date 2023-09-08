@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useContext, useEffect, useState } from "react";
 import { FlatList, Text, StyleSheet } from "react-native";
 import {
   getCastOfMovie,
@@ -12,12 +12,17 @@ import {
 } from "../../Services/httpService";
 import MovieItem from "../MovieDetail/MovieItem";
 import { useNavigation } from "@react-navigation/native";
+import { AuthContext } from "../../Store/authContext";
+import { fetchWatchList } from "../../util/firebase";
 
 function PopularList() {
   const navigation = useNavigation();
   const [popularMovies, setPopularMovies] = useState([]);
 
   const [watchList, setWatchList] = useState([]);
+
+  const authCtx = useContext(AuthContext);
+
   // useEffect(() => {
   //   async function getWatchList() {
   //     try {
@@ -35,13 +40,14 @@ function PopularList() {
       navigation.jumpTo("Popular");
       // Do something manually
       // ...
-      async function getWatchList() {
-        try {
-          const watchLists = await getMovieWatchList();
-          setWatchList(watchLists);
-        } catch (error) {}
-      }
-      getWatchList();
+      // async function getWatchList() {
+      //   try {
+      //     // const watchLists = await getMovieWatchList();
+      //     const watchLists = await fetchWatchList(authCtx.uid);
+      //     setWatchList(watchLists);
+      //   } catch (error) {}
+      // }
+      // getWatchList();
     });
   }, [navigation]);
   useEffect(() => {
@@ -52,15 +58,15 @@ function PopularList() {
     fetchPopularMovies();
   }, []);
 
-  function isInWatchList(movieId) {
-    if (watchList.length > 0) {
-      return watchList.find((movie) => {
-        return movie.id === movieId;
-      })
-        ? true
-        : false;
-    }
-  }
+  // function isInWatchList(movieId) {
+  //   if (watchList.length > 0) {
+  //     return watchList.find((movie) => {
+  //       return movie.id === movieId;
+  //     })
+  //       ? true
+  //       : false;
+  //   }
+  // }
 
   async function movieHandler(movieID) {
     console.log("click");
@@ -102,7 +108,7 @@ function PopularList() {
         reviews: reviews,
         casts: casts,
         youtubeKey: trailerId,
-        isWatchList: isInWatchList(movieID),
+        isWatchList: false,
       });
     } catch (error) {
       console.log(error);

@@ -3,8 +3,8 @@ import { ActivityIndicator, StyleSheet, Text, View } from "react-native";
 function Loading({ message }) {
   return (
     <View style={styles.rootContainer}>
-      <Text style={styles.message}>{message}</Text>
       <ActivityIndicator size="large" />
+      <Text style={styles.message}>{message}</Text>
     </View>
   );
 }
@@ -21,5 +21,6 @@ const styles = StyleSheet.create({
   message: {
     fontSize: 16,
     marginBottom: 12,
+    color: "white",
   },
 });

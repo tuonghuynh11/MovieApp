@@ -13,23 +13,24 @@ function SearchBox({ searchFunc, initValue = "" }) {
     setTextInput(enteredText);
   }
 
-  async function searchHandler() {
-    if (textInput.trim() === "") {
-      Alert.alert("Warning", "You need to enter a movie name");
-      return;
-    }
-    try {
-      Keyboard.dismiss();
-      await searchMovies(textInput)
-        .then((response) => {
-          searchFunc(response, textInput);
-        })
-        .catch((error) => {
-          console.log(error);
-        });
-    } catch (error) {
-      console.log(error);
-    }
+  function searchHandler() {
+    searchFunc(textInput);
+    // if (textInput.trim() === "") {
+    //   Alert.alert("Warning", "You need to enter a movie name");
+    //   return;
+    // }
+    // try {
+    //   Keyboard.dismiss();
+    //   await searchMovies(textInput)
+    //     .then((response) => {
+    //       searchFunc(response, textInput);
+    //     })
+    //     .catch((error) => {
+    //       console.log(error);
+    //     });
+    // } catch (error) {
+    //   console.log(error);
+    // }
   }
   return (
     <View style={styles.container}>

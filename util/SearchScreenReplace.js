@@ -3,8 +3,7 @@ import { GlobalColor } from "../Color/colors";
 import SearchScreen from "../Screens/SearchScreen";
 import MovieDetailScreen from "../Screens/MovieDetailScreen";
 const Stack = createNativeStackNavigator();
-function SearchScreenReplace() {
-  console.log("SearchScreenReplace");
+function SearchScreenReplace({ route }) {
   return (
     <Stack.Navigator
       id="search"
@@ -16,6 +15,7 @@ function SearchScreenReplace() {
 
         headerTintColor: "white",
       }}
+      initialRouteName="searchScreen"
     >
       <Stack.Screen
         name="searchScreen"

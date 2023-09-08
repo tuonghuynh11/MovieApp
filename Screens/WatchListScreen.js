@@ -1,14 +1,22 @@
-import { useCallback, useEffect, useLayoutEffect, useState } from "react";
+import {
+  useCallback,
+  useContext,
+  useEffect,
+  useLayoutEffect,
+  useState,
+} from "react";
 import { View, StyleSheet } from "react-native";
 import MoviesSearchList from "../Component/MovieDetail/MoviesSearchList";
 import { getMovieWatchList } from "../Services/httpService";
 import { useIsFocused, useNavigationState } from "@react-navigation/native";
 import EmptyWatchList from "../Component/UI/EmptyWatchList";
+import { fetchWatchList } from "../util/firebase";
+import { AuthContext } from "../Store/authContext";
 
 function WatchListScreen({ navigation }) {
   const [movieWatchList, setMovieWatchList] = useState([]);
   const isFocus = useIsFocused();
-
+  const authCtx = useContext(AuthContext);
   // async function getWatchList() {
   //   try {
   //     const watchList = await getMovieWatchList();
@@ -23,10 +31,8 @@ function WatchListScreen({ navigation }) {
     if (isFocus) {
       async function getWatchList() {
         try {
-          const watchList = await getMovieWatchList();
-          console.log("watchList", watchList.length);
-          console.log("movieWatchList", movieWatchList.length);
-
+          // const watchList = await getMovieWatchList();
+          const watchList = await fetchWatchList(authCtx.uid);
           setMovieWatchList(watchList);
           // loadData(watchList);
         } catch (error) {}

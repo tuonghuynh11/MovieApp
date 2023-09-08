@@ -34,8 +34,9 @@ export async function getMovieDetailById(movieId) {
 
   return response !== null ? response.data : null;
 }
-export async function searchMovies(movieName) {
-  var movieId = `${movieName}&include_adult=false&language=en-US&page=1`;
+export async function searchMovies(movieName, page = 1) {
+  var movieId = `${movieName}&include_adult=false&language=en-US&page=${page}`;
+
   var response = await axios
     .get(BASE_URL_SEARCH + movieId, options)
     .then((response) => {
@@ -48,25 +49,43 @@ export async function searchMovies(movieName) {
   // var response = await axios.get(BASE_URL_SEARCH + movieId, options);
   let movies = [];
   if (response !== null) {
-    response.data.results.forEach((item, index) => {
-      if (index < 10) {
-        movies.push(
-          new Movie(
-            item.id,
-            item.title,
-            item.overview,
-            "0",
-            item.vote_average,
-            item.poster_path,
-            item.release_date,
-            [...item?.genre_ids]
-          )
-        );
-      }
-    });
+    for (const item of response.data.results) {
+      await getMovieDetailById(item.id).then((movieDetail) => {
+        try {
+          movies.push(
+            new Movie(
+              movieDetail.id,
+              movieDetail.title,
+              movieDetail.overview,
+              movieDetail.runtime,
+              movieDetail.vote_average,
+              movieDetail.poster_path,
+              movieDetail.release_date,
+              [...movieDetail.genres]
+            )
+          );
+        } catch (error) {
+          console.log(error);
+        }
+      });
+    }
+    // response.data.results.forEach((item, index) => {
+    //   movies.push(
+    //     new Movie(
+    //       item.id,
+    //       item.title,
+    //       item.overview,
+    //       "0",
+    //       item.vote_average,
+    //       item.poster_path,
+    //       item.release_date,
+    //       [...item?.genre_ids]
+    //     )
+    //   );
+    // });
   }
 
-  return movies;
+  return { movies: movies, totalPage: response.data.total_pages };
 }
 export async function getNowPlayingMovies() {
   const moviesList = await getMovie("now_playing", 1).catch((error) => {});

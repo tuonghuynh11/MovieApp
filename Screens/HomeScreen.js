@@ -8,7 +8,13 @@ import {
   ScrollView,
 } from "react-native";
 import SearchBox from "../Component/UI/SearchBox";
-import { useCallback, useEffect, useLayoutEffect, useState } from "react";
+import {
+  useCallback,
+  useContext,
+  useEffect,
+  useLayoutEffect,
+  useState,
+} from "react";
 import {
   getCastOfMovie,
   getMovieDetailById,
@@ -31,6 +37,9 @@ import NowPlayingList from "../Component/HomeComponent/NowPlayingList";
 import UpcomingList from "../Component/HomeComponent/UpcomingList";
 import TopRatedList from "../Component/HomeComponent/TopRatedList";
 import PopularList from "../Component/HomeComponent/PopularList";
+import BookSeatScreen from "./BookSeatScreen";
+import { AuthContext } from "../Store/authContext";
+import { fetchWatchList } from "../util/firebase";
 
 const Tab = createMaterialTopTabNavigator();
 function HomeScreen({ navigation, route }) {
@@ -38,11 +47,13 @@ function HomeScreen({ navigation, route }) {
   const [isLoading, setIsLoading] = useState(false);
   const [upcomingMovies, setUpcomingMovies] = useState([]);
 
+  const authCtx = useContext(AuthContext);
   useEffect(() => {
     console.log("WatchListHomeScreen");
     async function getWatchList() {
       try {
-        const watchLists = await getMovieWatchList();
+        // const watchLists = await getMovieWatchList();
+        const watchLists = await fetchWatchList(authCtx.uid);
         setWatchList(watchLists);
       } catch (error) {}
     }
@@ -56,6 +67,8 @@ function HomeScreen({ navigation, route }) {
         ? true
         : false;
     }
+    console.log(0);
+
     return false;
   }
   useEffect(() => {
@@ -134,9 +147,10 @@ function HomeScreen({ navigation, route }) {
       />
     );
   }
-  async function searchHandler(response, textInput) {
+  async function searchHandler(textInput) {
     navigation.getParent("home").navigate("SearchScreen", {
-      searchKey: textInput,
+      params: { searchKey: textInput },
+      screen: "searchScreen",
     });
     // navigation.navigate("searchHomeScreen", {
     //   searchKey: textInput,
@@ -147,7 +161,7 @@ function HomeScreen({ navigation, route }) {
   ) : (
     <SafeAreaView style={styles.root}>
       <View style={styles.container}>
-        <Text style={styles.title}>What do you want to watch?</Text>
+        {/* <Text style={styles.title}>What do you want to watch?</Text> */}
         <SearchBox
           searchFunc={searchHandler}
           navigationParent={route?.params?.navigationParent}
@@ -217,5 +231,9 @@ const styles = StyleSheet.create({
   },
   moviesListNew: {
     alignSelf: "center",
+  },
+  titleContainer: {
+    flexDirection: "row",
+    justifyContent: "space-between",
   },
 });
